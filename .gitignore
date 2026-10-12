@@ -1,0 +1,11 @@
+# Local habit data (prevents sharing your personal habits on GitHub)
+habits.json
+
+# Python build and cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS-specific junk files
+.DS_Store
+Thumbs.db
