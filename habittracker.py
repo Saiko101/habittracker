@@ -1,4 +1,3 @@
-import calendar
 import datetime
 import json
 import os
@@ -32,25 +31,26 @@ def save_habits():
 
 
 def display_grid():
-    """Renders a dynamic box-drawing table based on the current month and year."""
+    """Renders a dynamic 7-day weekly table fitting mobile screens."""
     today = datetime.date.today()
-    year = today.year
-    month = today.month
     
-    # Get the exact number of days in the current month (handles 28, 30, 31 automatically!)
-    num_days = calendar.monthrange(year, month)[1]
-    month_name = calendar.month_name[month].upper()
+    # Get current week (Monday to Sunday)
+    start_of_week = today - datetime.timedelta(days=today.weekday())
+    week_days = [start_of_week + datetime.timedelta(days=i) for i in range(7)]
+    num_days = 7
 
-    # Header Row
-    day_headers = "".join(f"{str(day).center(3)}│" for day in range(1, num_days + 1))
+    week_range_str = f"{week_days[0].strftime('%b %d')} - {week_days[-1].strftime('%b %d, %Y')}"
+
+    # Header Row (Day numbers)
+    day_headers = "".join(f"{str(d.day).center(3)}│" for d in week_days)
     header_line = f"│ {BOLD}{CYAN}{'Habits':<12}{RESET} │{day_headers}"
 
-    # Dynamic Borders matching the number of days
+    # Dynamic Borders matching 7 columns
     top_border = "┌" + "─" * 14 + "┬" + ("───┬" * (num_days - 1)) + "───┐"
     divider = "├" + "─" * 14 + "┼" + ("───┼" * (num_days - 1)) + "───┤"
     bottom_border = "└" + "─" * 14 + "┴" + ("───┴" * (num_days - 1)) + "───┘"
 
-    print(f"\n {BOLD}--- JOURNAL HABIT TRACKER ({month_name} {year}) ---{RESET}\n")
+    print(f"\n {BOLD}--- HABIT TRACKER ({week_range_str}) ---{RESET}\n")
     print(top_border)
     print(header_line)
     print(divider)
@@ -65,8 +65,9 @@ def display_grid():
     else:
         for habit_name, days_dict in my_habits.items():
             formatted_days = []
-            for d in range(1, num_days + 1):
-                val = days_dict.get(str(d), " ")
+            for d in week_days:
+                date_key = d.isoformat()  # Format: 'YYYY-MM-DD'
+                val = days_dict.get(date_key, " ")
                 if val in ["✔", "x", "X"]:
                     formatted_days.append(f" {GREEN}✔{RESET} ")
                 else:
@@ -107,12 +108,7 @@ while True:
         if new_habit:
             new_habit = new_habit.strip()
             if new_habit not in my_habits:
-                # Initialize slots for all days of the current month
-                today = datetime.date.today()
-                num_days = calendar.monthrange(today.year, today.month)[1]
-                my_habits[new_habit] = {
-                    str(day): " " for day in range(1, num_days + 1)
-                }
+                my_habits[new_habit] = {}
                 save_habits()
 
     elif choice.startswith("2"):
@@ -122,11 +118,9 @@ while True:
             "Choose habit to mark done:", choices=list(my_habits.keys()), pointer="❯"
         ).ask()
         if chosen_habit:
-            today_day = str(datetime.date.today().day)
-            # Ensure day exists in dict just in case of month shifts
-            if today_day in my_habits[chosen_habit]:
-                my_habits[chosen_habit][today_day] = "✔"
-                save_habits()
+            today_key = datetime.date.today().isoformat()
+            my_habits[chosen_habit][today_key] = "✔"
+            save_habits()
 
     elif choice.startswith("3"):
         if not my_habits:
@@ -135,7 +129,6 @@ while True:
             "Choose habit to unmark:", choices=list(my_habits.keys()), pointer="❯"
         ).ask()
         if chosen_habit:
-            today_day = str(datetime.date.today().day)
-            if today_day in my_habits[chosen_habit]:
-                my_habits[chosen_habit][today_day] = " "
-                save_habits()
+            today_key = datetime.date.today().isoformat()
+            my_habits[chosen_habit][today_key] = " "
+            save_habits()
